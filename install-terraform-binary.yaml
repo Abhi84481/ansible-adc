@@ -1,17 +1,11 @@
-- name: Install Apache on GCP VM
-  hosts: 10.246.10.61
-  become: true  #run as root
-  gather_facts: yes
+- name: SSH onto target VM and run a simple command
+  hosts: all
+  gather_facts: no
   tasks:
-    - name: Install Apache
-      apt:
-        name: apache2
-        state: present
-      when: ansible_os_family == "Debian"
+    - name: Run a simple command on the target VM
+      ansible.builtin.shell: hostname
+      register: result
 
-    - name: Start Apache
-      service:
-        name: apache2
-        state: started
-      when: ansible_os_family == "Debian"
-
+    - name: Show the result of the command
+      debug:
+        var: result.stdout
