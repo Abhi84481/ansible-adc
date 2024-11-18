@@ -1,6 +1,6 @@
 ---
 - name: Install Terraform on a VM
-  hosts: terraform_vm
+  hosts: 10.246.10.61
   become: yes
   tasks:
     - name: Ensure dependencies are installed
