@@ -1,9 +1,7 @@
----
 - name: Install Apache on RHEL 9
   hosts: all
   gather_facts: yes
   become: yes  # Use sudo to install packages
-
   tasks:
     - name: Update the system
       ansible.builtin.dnf:
@@ -16,39 +14,6 @@
         name: httpd
         state: present
 
-    - name: Ensure required directories exist
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: directory
-        owner: root
-        group: root
-        mode: '0755'
-      loop:
-        - /etc/httpd
-        - /etc/httpd/conf
-        - /var/log/httpd
-        - /var/www/html
-
-    - name: Restore default Apache configuration if missing
-      ansible.builtin.shell: |
-        if [ ! -f /etc/httpd/conf/httpd.conf ]; then
-          echo "Creating a default configuration file..."
-          echo "ServerRoot \"/etc/httpd\"" > /etc/httpd/conf/httpd.conf
-          echo "Listen 80" >> /etc/httpd/conf/httpd.conf
-          echo "Include conf.modules.d/*.conf" >> /etc/httpd/conf/httpd.conf
-          echo "User apache" >> /etc/httpd/conf/httpd.conf
-          echo "Group apache" >> /etc/httpd/conf/httpd.conf
-          echo "DocumentRoot \"/var/www/html\"" >> /etc/httpd/conf/httpd.conf
-        fi
-      args:
-        warn: false
-
-    - name: Check Apache configuration
-      ansible.builtin.shell: |
-        apachectl configtest
-      register: configtest_result
-      failed_when: "'Syntax OK' not in configtest_result.stdout"
-
     - name: Start Apache service
       ansible.builtin.service:
         name: httpd
@@ -57,7 +22,7 @@
 
     - name: Confirm Apache is running
       ansible.builtin.uri:
-        url: http://{{ ansible_default_ipv4.address }}
+        url: http://{{ inventory_hostname }}
         method: GET
         status_code: 200
       register: apache_status
