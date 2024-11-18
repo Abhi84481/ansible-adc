@@ -1,7 +1,7 @@
 ---
 - name: Install Terraform on a VM
   hosts: 10.246.10.61
-  become: yes
+  become: true
   tasks:
     - name: Ensure dependencies are installed
       apt:
