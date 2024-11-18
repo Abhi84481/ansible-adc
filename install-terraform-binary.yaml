@@ -1,11 +1,34 @@
-- name: SSH onto target VM and run a simple command
+---
+- name: Install Apache on RHEL 9
   hosts: all
-  gather_facts: no
+  gather_facts: yes
+  become: yes  # Use sudo to install packages
   tasks:
-    - name: Run a simple command on the target VM
-      ansible.builtin.shell: hostname
-      register: result
+    - name: Update the system
+      ansible.builtin.dnf:
+        name: '*'
+        state: latest
+        update_cache: yes
 
-    - name: Show the result of the command
+    - name: Install Apache (httpd)
+      ansible.builtin.dnf:
+        name: httpd
+        state: present
+
+    - name: Start Apache service
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: yes  # Ensure Apache starts on boot
+
+    - name: Confirm Apache is running
+      ansible.builtin.uri:
+        url: http://{{ inventory_hostname }}
+        method: GET
+        status_code: 200
+      register: apache_status
+      ignore_errors: yes
+
+    - name: Print Apache status
       debug:
-        var: result.stdout
+        var: apache_status
