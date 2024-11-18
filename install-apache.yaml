@@ -30,10 +30,18 @@
         - /var/www/html
 
     - name: Restore default Apache configuration if missing
-      ansible.builtin.command:
-        cmd: cp -n /usr/share/httpd/httpd.conf /etc/httpd/conf/httpd.conf
+      ansible.builtin.shell: |
+        if [ ! -f /etc/httpd/conf/httpd.conf ]; then
+          echo "Creating a default configuration file..."
+          echo "ServerRoot \"/etc/httpd\"" > /etc/httpd/conf/httpd.conf
+          echo "Listen 80" >> /etc/httpd/conf/httpd.conf
+          echo "Include conf.modules.d/*.conf" >> /etc/httpd/conf/httpd.conf
+          echo "User apache" >> /etc/httpd/conf/httpd.conf
+          echo "Group apache" >> /etc/httpd/conf/httpd.conf
+          echo "DocumentRoot \"/var/www/html\"" >> /etc/httpd/conf/httpd.conf
+        fi
       args:
-        creates: /etc/httpd/conf/httpd.conf
+        warn: false
 
     - name: Check Apache configuration
       ansible.builtin.shell: |
