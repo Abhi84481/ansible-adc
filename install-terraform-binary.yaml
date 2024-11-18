@@ -1,5 +1,6 @@
 - name: Install Apache on GCP VM
   hosts: 10.246.10.61
+  become: true  #run as root
   gather_facts: yes
   tasks:
     - name: Install Apache
@@ -13,3 +14,4 @@
         name: apache2
         state: started
       when: ansible_os_family == "Debian"
+
