@@ -3,6 +3,7 @@
   hosts: all
   gather_facts: yes
   become: yes  # Use sudo to install packages
+
   tasks:
     - name: Update the system
       ansible.builtin.dnf:
@@ -15,6 +16,31 @@
         name: httpd
         state: present
 
+    - name: Ensure required directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /etc/httpd
+        - /etc/httpd/conf
+        - /var/log/httpd
+        - /var/www/html
+
+    - name: Restore default Apache configuration if missing
+      ansible.builtin.command:
+        cmd: cp -n /usr/share/httpd/httpd.conf /etc/httpd/conf/httpd.conf
+      args:
+        creates: /etc/httpd/conf/httpd.conf
+
+    - name: Check Apache configuration
+      ansible.builtin.shell: |
+        apachectl configtest
+      register: configtest_result
+      failed_when: "'Syntax OK' not in configtest_result.stdout"
+
     - name: Start Apache service
       ansible.builtin.service:
         name: httpd
@@ -23,7 +49,7 @@
 
     - name: Confirm Apache is running
       ansible.builtin.uri:
-        url: http://{{ inventory_hostname }}
+        url: http://{{ ansible_default_ipv4.address }}
         method: GET
         status_code: 200
       register: apache_status
