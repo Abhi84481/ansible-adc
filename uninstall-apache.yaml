@@ -1,8 +1,8 @@
 ---
-- name: Remove Apache from RHEL 9
+- name: Fully Remove Apache from RHEL 9
   hosts: all
   gather_facts: yes
-  become: yes  # Use sudo privileges
+  become: yes
   tasks:
     - name: Stop Apache service if running
       ansible.builtin.service:
@@ -10,31 +10,31 @@
         state: stopped
         enabled: no
 
-    - name: Remove Apache package
-      ansible.builtin.dnf:
-        name: httpd
-        state: absent
-
-    - name: Remove Apache configuration files
-      ansible.builtin.file:
-        path: /etc/httpd
-        state: absent
-
-    - name: Remove Apache web files
-      ansible.builtin.file:
-        path: /var/www
-        state: absent
-
-    - name: Remove Apache log files
-      ansible.builtin.file:
-        path: /var/log/httpd
-        state: absent
-
-    - name: Verify Apache is uninstalled
+    - name: Remove Apache and related packages
       ansible.builtin.shell: |
-        dnf list installed httpd || echo "Apache is not installed"
-      register: apache_check
+        dnf remove -y httpd* mod_ssl* apr* apr-util*
+      register: remove_apache
+    - debug:
+        var: remove_apache.stdout
 
-    - name: Print Apache uninstallation status
-      debug:
-        var: apache_check.stdout
+    - name: Remove residual configuration files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /etc/httpd
+        - /var/www
+        - /var/log/httpd
+        - /usr/lib64/httpd
+        - /run/httpd
+
+    - name: Clean up package cache
+      ansible.builtin.shell: |
+        dnf clean all
+
+    - name: Verify Apache and dependencies are uninstalled
+      ansible.builtin.shell: |
+        rpm -qa | grep httpd || echo "Apache and dependencies are removed"
+      register: apache_verification
+    - debug:
+        var: apache_verification.stdout
